@@ -13,5 +13,22 @@ struct Cooking_AppApp: App {
         WindowGroup {
             ContentView()
         }
+        // TODO: Add .modelContainer(for: Recipe.self) when Recipe conforms to PersistentModel
+    }
+}
+
+// MARK: - App Launch Setup
+extension Cooking_AppApp {
+    private func setupApp() {
+        // Configure app-wide settings
+        setupAppearance()
+    }
+    
+    private func setupAppearance() {
+        // Customize navigation bar appearance
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
 }

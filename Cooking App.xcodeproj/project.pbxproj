@@ -16,6 +16,11 @@
 			path = "Cooking App";
 			sourceTree = "<group>";
 		};
+		ACE6D2282EB2765D005C56CD /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +37,7 @@
 		ACE6D20F2EB2526E005C56CD = {
 			isa = PBXGroup;
 			children = (
+				ACE6D2282EB2765D005C56CD /* docs */,
 				ACE6D21A2EB2526E005C56CD /* Cooking App */,
 				ACE6D2192EB2526E005C56CD /* Products */,
 			);
@@ -62,6 +68,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				ACE6D21A2EB2526E005C56CD /* Cooking App */,
+				ACE6D2282EB2765D005C56CD /* docs */,
 			);
 			name = "Cooking App";
 			packageProductDependencies = (
