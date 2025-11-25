@@ -6,8 +6,48 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		ACE6D28F2EB3056D005C56CD /* Testing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACE6D2832EB2AF91005C56CD /* Testing.framework */; platformFilter = ios; };
+		ACE6D2902EB3056D005C56CD /* Testing.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ACE6D2832EB2AF91005C56CD /* Testing.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		ACE6D2502EB29965005C56CD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ACE6D2102EB2526E005C56CD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ACE6D2172EB2526E005C56CD;
+			remoteInfo = "Cooking App";
+		};
+		ACE6D25D2EB299FA005C56CD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ACE6D2102EB2526E005C56CD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ACE6D2172EB2526E005C56CD;
+			remoteInfo = "Cooking App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		ACE6D2912EB3056D005C56CD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				ACE6D2902EB3056D005C56CD /* Testing.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		AC1F041F2ED604ED00776F87 /* Cooking App.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Cooking App.xctestplan"; sourceTree = "<group>"; };
 		ACE6D2182EB2526E005C56CD /* Cooking App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cooking App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACE6D24A2EB29964005C56CD /* Cooking AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cooking AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACE6D2592EB299FA005C56CD /* Cooking App Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cooking App Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACE6D2832EB2AF91005C56CD /* Testing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Testing.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/Testing.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -21,6 +61,16 @@
 			path = docs;
 			sourceTree = "<group>";
 		};
+		ACE6D24B2EB29965005C56CD /* Cooking AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Cooking AppUITests";
+			sourceTree = "<group>";
+		};
+		ACE6D25A2EB299FA005C56CD /* Cooking App Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Cooking App Tests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,14 +81,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ACE6D2472EB29964005C56CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ACE6D2562EB299FA005C56CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACE6D28F2EB3056D005C56CD /* Testing.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		ACE6D20F2EB2526E005C56CD = {
 			isa = PBXGroup;
 			children = (
+				AC1F041F2ED604ED00776F87 /* Cooking App.xctestplan */,
 				ACE6D2282EB2765D005C56CD /* docs */,
 				ACE6D21A2EB2526E005C56CD /* Cooking App */,
+				ACE6D24B2EB29965005C56CD /* Cooking AppUITests */,
+				ACE6D25A2EB299FA005C56CD /* Cooking App Tests */,
+				ACE6D2822EB2AF91005C56CD /* Frameworks */,
 				ACE6D2192EB2526E005C56CD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -47,8 +116,18 @@
 			isa = PBXGroup;
 			children = (
 				ACE6D2182EB2526E005C56CD /* Cooking App.app */,
+				ACE6D24A2EB29964005C56CD /* Cooking AppUITests.xctest */,
+				ACE6D2592EB299FA005C56CD /* Cooking App Tests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		ACE6D2822EB2AF91005C56CD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ACE6D2832EB2AF91005C56CD /* Testing.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -77,6 +156,53 @@
 			productReference = ACE6D2182EB2526E005C56CD /* Cooking App.app */;
 			productType = "com.apple.product-type.application";
 		};
+		ACE6D2492EB29964005C56CD /* Cooking AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ACE6D2522EB29965005C56CD /* Build configuration list for PBXNativeTarget "Cooking AppUITests" */;
+			buildPhases = (
+				ACE6D2462EB29964005C56CD /* Sources */,
+				ACE6D2472EB29964005C56CD /* Frameworks */,
+				ACE6D2482EB29964005C56CD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ACE6D2512EB29965005C56CD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ACE6D24B2EB29965005C56CD /* Cooking AppUITests */,
+			);
+			name = "Cooking AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "Cooking AppUITests";
+			productReference = ACE6D24A2EB29964005C56CD /* Cooking AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		ACE6D2582EB299FA005C56CD /* Cooking App Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ACE6D25F2EB299FA005C56CD /* Build configuration list for PBXNativeTarget "Cooking App Tests" */;
+			buildPhases = (
+				ACE6D2552EB299FA005C56CD /* Sources */,
+				ACE6D2562EB299FA005C56CD /* Frameworks */,
+				ACE6D2572EB299FA005C56CD /* Resources */,
+				ACE6D2912EB3056D005C56CD /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ACE6D25E2EB299FA005C56CD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ACE6D25A2EB299FA005C56CD /* Cooking App Tests */,
+			);
+			name = "Cooking App Tests";
+			packageProductDependencies = (
+			);
+			productName = "Cooking App Tests";
+			productReference = ACE6D2592EB299FA005C56CD /* Cooking App Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -89,6 +215,14 @@
 				TargetAttributes = {
 					ACE6D2172EB2526E005C56CD = {
 						CreatedOnToolsVersion = 26.0.1;
+					};
+					ACE6D2492EB29964005C56CD = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = ACE6D2172EB2526E005C56CD;
+					};
+					ACE6D2582EB299FA005C56CD = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = ACE6D2172EB2526E005C56CD;
 					};
 				};
 			};
@@ -107,12 +241,28 @@
 			projectRoot = "";
 			targets = (
 				ACE6D2172EB2526E005C56CD /* Cooking App */,
+				ACE6D2492EB29964005C56CD /* Cooking AppUITests */,
+				ACE6D2582EB299FA005C56CD /* Cooking App Tests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		ACE6D2162EB2526E005C56CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ACE6D2482EB29964005C56CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ACE6D2572EB299FA005C56CD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -129,7 +279,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ACE6D2462EB29964005C56CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ACE6D2552EB299FA005C56CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		ACE6D2512EB29965005C56CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ACE6D2172EB2526E005C56CD /* Cooking App */;
+			targetProxy = ACE6D2502EB29965005C56CD /* PBXContainerItemProxy */;
+		};
+		ACE6D25E2EB299FA005C56CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ACE6D2172EB2526E005C56CD /* Cooking App */;
+			targetProxy = ACE6D25D2EB299FA005C56CD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		ACE6D2212EB25270005C56CD /* Debug */ = {
@@ -280,7 +457,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -314,8 +491,86 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		ACE6D2532EB29965005C56CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "besmart.Cooking-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Cooking App";
+			};
+			name = Debug;
+		};
+		ACE6D2542EB29965005C56CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "besmart.Cooking-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Cooking App";
+			};
+			name = Release;
+		};
+		ACE6D2602EB299FA005C56CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "besmart.Cooking-App-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cooking App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cooking App";
+			};
+			name = Debug;
+		};
+		ACE6D2612EB299FA005C56CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "besmart.Cooking-App-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cooking App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cooking App";
 			};
 			name = Release;
 		};
@@ -336,6 +591,24 @@
 			buildConfigurations = (
 				ACE6D2242EB25270005C56CD /* Debug */,
 				ACE6D2252EB25270005C56CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ACE6D2522EB29965005C56CD /* Build configuration list for PBXNativeTarget "Cooking AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACE6D2532EB29965005C56CD /* Debug */,
+				ACE6D2542EB29965005C56CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ACE6D25F2EB299FA005C56CD /* Build configuration list for PBXNativeTarget "Cooking App Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACE6D2602EB299FA005C56CD /* Debug */,
+				ACE6D2612EB299FA005C56CD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

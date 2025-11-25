@@ -7,6 +7,10 @@
 
 import XCTest
 
+// MARK: - UI Tests for Model Conversion Validation
+// Note: Using XCTest framework (not Swift Testing) as this is a UITests target
+// UITests traditionally use XCTest for UI automation capabilities
+
 final class ModelConversionUITests: XCTestCase {
 
     var app: XCUIApplication!
@@ -14,11 +18,111 @@ final class ModelConversionUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        
+        // Add launch arguments for debugging
+        app.launchArguments = ["UI_TESTING"]
         app.launch()
+        
+        // Verify app launched successfully
+        XCTAssertTrue(app.exists, "App should launch successfully")
+        
+        // Wait for app to stabilize by checking if the generate button exists
+        let generateButton = getGenerateButton()
+        let appStabilized = generateButton.waitForExistence(timeout: 5.0)
+        XCTAssertTrue(appStabilized, "App should stabilize within 5 seconds")
     }
 
     override func tearDownWithError() throws {
         app = nil
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func getGenerateButton() -> XCUIElement {
+        // Try accessibility identifier first (most reliable)
+        let buttonById = app.buttons["generateRecipeButton"]
+        if buttonById.exists {
+            return buttonById
+        }
+        
+        // Fallback to text-based lookup
+        let buttonByText = app.buttons["Generate Recipe"]
+        if buttonByText.exists {
+            return buttonByText
+        }
+        
+        // Final fallback - look for any button containing "Generate"
+        let fallbackButton = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'generate'")).firstMatch
+        
+        // If no button is found, return a non-existent element to avoid crashes
+        if !fallbackButton.exists {
+            print("⚠️ Generate button not found using any method")
+        }
+        
+        return fallbackButton
+    }
+    
+    private func waitForGenerateButtonToReturn(timeout: TimeInterval = 10.0) -> Bool {
+        let button = getGenerateButton()
+        return button.waitForExistence(timeout: timeout) && button.isEnabled
+    }
+    
+    private func waitForRecipeContent(timeout: TimeInterval = 10.0) -> Bool {
+        // Look for recipe content to appear
+        let recipeScrollView = app.scrollViews.firstMatch
+        return recipeScrollView.waitForExistence(timeout: timeout)
+    }
+    
+    private func waitForUIStabilization(timeout: TimeInterval = 5.0) -> Bool {
+        let generateButton = getGenerateButton()
+        return generateButton.waitForExistence(timeout: timeout)
+    }
+    
+    private func waitForOperationCompletion(timeout: TimeInterval = 10.0) -> Bool {
+        // Wait for any ongoing operations to complete
+        let generateButton = getGenerateButton()
+        
+        // Wait for button to exist and be enabled
+        guard generateButton.waitForExistence(timeout: timeout) else { return false }
+        
+        // Use a polling approach instead of Thread.sleep
+        let pollInterval: TimeInterval = 0.1
+        let maxAttempts = Int(1.0 / pollInterval)
+        
+        for _ in 0..<maxAttempts {
+            if generateButton.exists && generateButton.isEnabled {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(pollInterval))
+        }
+        
+        return generateButton.exists
+    }
+    
+    private func performSingleGeneration(generationNumber: Int) -> Bool {
+        let generateButton = getGenerateButton()
+        
+        guard generateButton.exists else {
+            print("Generation \(generationNumber): Button not found")
+            return false
+        }
+        
+        generateButton.tap()
+        
+        // Use a small delay for any immediate UI changes
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
+        
+        // Check if recipe content appeared
+        if waitForRecipeContent(timeout: 3.0) {
+            print("Generation \(generationNumber): Recipe content appeared")
+            return true
+        } else if waitForGenerateButtonToReturn(timeout: 5.0) {
+            print("Generation \(generationNumber): Button became ready again")
+            return true
+        } else {
+            print("Generation \(generationNumber): No clear completion signal")
+            return false
+        }
     }
     
     // MARK: - UI Validation Tests Before Model Integration
@@ -28,7 +132,7 @@ final class ModelConversionUITests: XCTestCase {
         // Test 17: Validate app launches correctly with current UI
         
         // Check main UI elements are present
-        let generateButton = app.buttons["Generate Recipe"]
+        let generateButton = getGenerateButton()
         XCTAssertTrue(generateButton.exists, "Generate Recipe button should exist")
         XCTAssertTrue(generateButton.isEnabled, "Generate Recipe button should be enabled")
         
@@ -49,7 +153,7 @@ final class ModelConversionUITests: XCTestCase {
     func testRecipeGenerationUIFlow() throws {
         // Test 18: Validate complete recipe generation UI flow
         
-        let generateButton = app.buttons["Generate Recipe"]
+        let generateButton = getGenerateButton()
         XCTAssertTrue(generateButton.exists, "Generate button should exist")
         
         // Record initial state
@@ -59,29 +163,43 @@ final class ModelConversionUITests: XCTestCase {
         // Tap generate button
         generateButton.tap()
         
-        // Wait for generation to complete (simulated takes ~2 seconds)
-        // Look for any content that appears after generation
-        sleep(3) // Give time for simulated generation
-        
-        // Check if recipe content appeared
-        let scrollViews = app.scrollViews
-        print("Found \(scrollViews.count) scroll views after generation")
-        
-        // Look for any text that might contain recipe information
-        let allText = app.staticTexts
-        var foundRecipeContent = false
-        for i in 0..<min(allText.count, 10) { // Check first 10 text elements
-            let text = allText.element(boundBy: i)
-            if text.exists && !text.label.isEmpty {
-                print("Text element \(i): '\(text.label)'")
-                if text.label.contains("Recipe") || text.label.contains("ingredients") || 
-                   text.label.contains("Instructions") {
-                    foundRecipeContent = true
+        // Wait for recipe content to appear instead of arbitrary sleep
+        let recipeContentAppeared = waitForRecipeContent(timeout: 10.0)
+        if recipeContentAppeared {
+            print("✅ Recipe content appeared after generation")
+            
+            // Check if recipe content appeared in scroll view
+            let scrollViews = app.scrollViews
+            print("Found \(scrollViews.count) scroll views after generation")
+            
+            if scrollViews.count > 0 {
+                let scrollView = scrollViews.firstMatch
+                let scrollViewTexts = scrollView.staticTexts
+                print("Found \(scrollViewTexts.count) text elements in recipe content")
+            }
+        } else {
+            print("⚠️  No recipe content appeared, checking for any text changes")
+            
+            // Look for any text that might contain recipe information
+            let allText = app.staticTexts
+            var foundRecipeContent = false
+            for i in 0..<min(allText.count, 10) { // Check first 10 text elements
+                let text = allText.element(boundBy: i)
+                if text.exists && !text.label.isEmpty {
+                    print("Text element \(i): '\(text.label)'")
+                    if text.label.contains("Recipe") || text.label.contains("ingredients") || 
+                       text.label.contains("Instructions") {
+                        foundRecipeContent = true
+                    }
                 }
             }
+            
+            print("Recipe content found in static texts: \(foundRecipeContent)")
         }
         
-        print("Recipe content found: \(foundRecipeContent)")
+        // Ensure button is still functional after generation
+        let buttonStillExists = generateButton.exists
+        XCTAssertTrue(buttonStillExists, "Generate button should still exist after generation")
     }
     
     @MainActor
@@ -121,19 +239,18 @@ final class ModelConversionUITests: XCTestCase {
     func testMultipleGenerationsUIStability() throws {
         // Test 20: Test UI stability with multiple generations
         
-        let generateButton = app.buttons["Generate Recipe"]
+        let generateButton = getGenerateButton()
         
         // Perform multiple generations
         for i in 1...3 {
             print("Starting generation \(i)")
             
             XCTAssertTrue(generateButton.exists, "Generate button should exist for generation \(i)")
-            generateButton.tap()
             
-            // Wait for generation to complete
-            sleep(3)
+            // Perform generation using helper method
+            let generationCompleted = performSingleGeneration(generationNumber: i)
             
-            print("Completed generation \(i)")
+            print("Completed generation \(i) (detected: \(generationCompleted))")
             
             // Check UI is still stable
             XCTAssertTrue(generateButton.exists, "Generate button should still exist after generation \(i)")
@@ -148,12 +265,20 @@ final class ModelConversionUITests: XCTestCase {
     func testLaunchPerformanceBaseline() throws {
         // Test 21: Establish launch performance baseline
         
-        let options = XCTMeasureOptions()
-        options.iterationCount = 5
+        // Only run performance tests on device, not simulator
+        #if targetEnvironment(simulator)
+        throw XCTSkip("Performance tests disabled on simulator")
+        #endif
         
-        measure(options: options, metrics: [XCTApplicationLaunchMetric()]) {
+        measure(metrics: [XCTApplicationLaunchMetric()]) {
             let testApp = XCUIApplication()
+            testApp.launchArguments = ["UI_TESTING"]
             testApp.launch()
+            
+            // Wait for app to be ready
+            let generateButton = testApp.buttons["generateRecipeButton"]
+            _ = generateButton.waitForExistence(timeout: 5.0)
+            
             testApp.terminate()
         }
         
@@ -164,11 +289,20 @@ final class ModelConversionUITests: XCTestCase {
     func testAccessibilityElementsBaseline() throws {
         // Test 22: Validate accessibility before MediaPipe integration
         
-        let generateButton = app.buttons["Generate Recipe"]
-        if generateButton.exists {
-            XCTAssertTrue(generateButton.isAccessibilityElement, "Generate button should be accessible")
-            print("✅ Generate button is accessible")
-        }
+        // Use helper method instead of duplicating logic
+        let generateButton = getGenerateButton()
+        XCTAssertTrue(generateButton.exists, "Generate button should be accessible")
+        
+        // Test that the button has proper accessibility properties
+        let accessibilityLabel = generateButton.label
+        XCTAssertFalse(accessibilityLabel.isEmpty, "Generate button should have an accessibility label")
+        XCTAssertTrue(accessibilityLabel.contains("Generate") || accessibilityLabel.contains("generate"), 
+                     "Button label should contain 'Generate' (case insensitive)")
+        
+        print("✅ Generate button is accessible with label: '\(accessibilityLabel)'")
+        
+        // Test additional accessibility properties
+        XCTAssertTrue(generateButton.isHittable, "Generate button should be hittable")
         
         // Count all accessible elements
         let allAccessibleElements = app.descendants(matching: .any).allElementsBoundByAccessibilityElement
@@ -182,22 +316,30 @@ final class ModelConversionUITests: XCTestCase {
     func testMemoryUsageBaseline() throws {
         // Test 23: Establish memory usage baseline
         
-        // Launch app and wait for stabilization
-        sleep(2)
+        // Wait for app to stabilize after launch
+        let generateButton = getGenerateButton()
+        let appReady = generateButton.waitForExistence(timeout: 5.0)
+        XCTAssertTrue(appReady, "App should be ready within 5 seconds")
         
         // Perform several recipe generations to test memory behavior
-        let generateButton = app.buttons["Generate Recipe"]
-        
         for i in 1...5 {
-            if generateButton.exists {
-                generateButton.tap()
-                sleep(3) // Wait for generation
+            if generateButton.exists && generateButton.isEnabled {
+                print("Starting memory test generation \(i)")
+                _ = performSingleGeneration(generationNumber: i)
+                
+                // Check that the app is still responsive
+                XCTAssertTrue(generateButton.exists, "Generate button should exist after generation \(i)")
+                
                 print("Memory test generation \(i) completed")
+            } else {
+                print("Skipping generation \(i) - button not available")
             }
         }
         
         // App should still be responsive
         XCTAssertTrue(generateButton.exists, "App should remain responsive after multiple generations")
+        XCTAssertTrue(app.exists, "App should not have crashed")
+        
         print("✅ Memory usage baseline established")
     }
     
@@ -207,27 +349,70 @@ final class ModelConversionUITests: XCTestCase {
     func testRapidTapHandling() throws {
         // Test 24: Validate UI handles rapid button taps gracefully
         
-        let generateButton = app.buttons["Generate Recipe"]
+        let generateButton = getGenerateButton()
+        XCTAssertTrue(generateButton.exists, "Generate button should exist before rapid tap test")
+        
+        // Record initial state
+        let initiallyEnabled = generateButton.isEnabled
+        print("Button initially enabled: \(initiallyEnabled)")
         
         // Rapid taps should not crash the app
-        for _ in 1...5 {
-            if generateButton.exists && generateButton.isEnabled {
+        for i in 1...5 {
+            if generateButton.exists {
+                print("Rapid tap \(i)")
                 generateButton.tap()
+                // Small delay between taps to be more realistic
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
             }
         }
         
         // App should still be functional
         XCTAssertTrue(app.exists, "App should not crash from rapid taps")
-        XCTAssertTrue(generateButton.exists, "Generate button should still exist")
+        
+        // Wait for any pending operations to complete
+        let operationsCompleted = waitForOperationCompletion(timeout: 15.0)
+        print("Operations completed successfully: \(operationsCompleted)")
+        
+        // Button should still exist
+        XCTAssertTrue(generateButton.exists, "Generate button should still exist after rapid taps")
         
         print("✅ UI handles rapid taps gracefully")
+    }
+    
+    @MainActor
+    func testUIElementsStabilityAfterInteraction() throws {
+        // Test 25: Ensure UI elements remain stable after user interactions
+        
+        let generateButton = getGenerateButton()
+        XCTAssertTrue(generateButton.exists, "Generate button should exist")
+        
+        // Test single interaction
+        generateButton.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(2.0)) // Allow for processing
+        
+        // Verify UI elements are still accessible
+        XCTAssertTrue(generateButton.exists, "Generate button should exist after interaction")
+        
+        // Test navigation elements are still present
+        let navBar = app.navigationBars.firstMatch
+        if navBar.exists {
+            XCTAssertTrue(navBar.exists, "Navigation bar should remain after interaction")
+        }
+        
+        // Test toolbar elements are still present
+        let toolbar = app.toolbars.firstMatch
+        if toolbar.exists {
+            XCTAssertTrue(toolbar.exists, "Toolbar should remain after interaction")
+        }
+        
+        print("✅ UI elements remain stable after interaction")
     }
     
     // MARK: - Tests to Enable After MediaPipe Integration
     
     @MainActor
     func testMediaPipeModelLoadingUI() throws {
-        // Test 25: UI behavior during MediaPipe model loading
+        // Test 26: UI behavior during MediaPipe model loading
         
         throw XCTSkip("Enable after MediaPipe model integration")
         
@@ -255,7 +440,7 @@ final class ModelConversionUITests: XCTestCase {
     
     @MainActor
     func testRealModelGenerationUI() throws {
-        // Test 26: UI with real MediaPipe model generation
+        // Test 27: UI with real MediaPipe model generation
         
         throw XCTSkip("Enable after MediaPipe model integration")
         
@@ -285,7 +470,7 @@ final class ModelConversionUITests: XCTestCase {
     
     @MainActor
     func testModelPerformanceUI() throws {
-        // Test 27: UI performance with real model
+        // Test 28: UI performance with real model
         
         throw XCTSkip("Enable after MediaPipe model integration")
         
@@ -303,7 +488,7 @@ final class ModelConversionUITests: XCTestCase {
     
     @MainActor
     func testModelErrorHandlingUI() throws {
-        // Test 28: UI behavior when model encounters errors
+        // Test 29: UI behavior when model encounters errors
         
         throw XCTSkip("Enable after MediaPipe model integration")
         

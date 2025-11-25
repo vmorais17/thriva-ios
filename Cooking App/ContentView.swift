@@ -70,6 +70,9 @@ struct ContentView: View {
                 .disabled(isGenerating)
                 .scaleEffect(isGenerating ? 0.95 : 1.0)
                 .animation(.easeInOut(duration: 0.1), value: isGenerating)
+                .accessibilityIdentifier("generateRecipeButton")
+                .accessibilityLabel(isGenerating ? "Generating Recipe" : "Generate Recipe")
+                .accessibilityHint("Tap to generate a new recipe using AI")
                 
                 // Recipe Display Section
                 if let recipe = currentRecipe {

@@ -6,30 +6,30 @@
 //
 
 import Testing
-import XCTest
 import Foundation
 @testable import Cooking_App
 
-@Suite("Basic Test Validation")
+// MARK: - Basic Test Validation (Swift Testing + Swift 6)
+@Suite("Basic Test Validation") 
 struct BasicTestValidation {
     
-    @Test("Basic App Structure Test")
-    func basicAppStructureTest() async throws {
-        // This is the most basic test to verify imports work
-        
+    @Test("Basic App Structure")
+    @MainActor
+    func basicAppStructure() async throws {
         // Test that we can create a RecipeGenerator
         let generator = RecipeGenerator()
         #expect(generator != nil, "Should be able to create RecipeGenerator")
         
-        // Test that we can create GenerationParameters
+        // Test that we can create GenerationParameters  
         let params = GenerationParameters()
         #expect(params.isValid, "Default parameters should be valid")
         
         print("✅ Basic app structure is working")
     }
     
-    @Test("Simple Recipe Generation Test")  
-    func simpleRecipeGenerationTest() async throws {
+    @Test("Simple Recipe Generation") 
+    @MainActor
+    func simpleRecipeGeneration() async throws {
         // Test the most basic recipe generation without complex actor interactions
         
         let generator = RecipeGenerator()
@@ -47,9 +47,9 @@ struct BasicTestValidation {
         print("📊 Generation took: \(String(format: "%.2f", duration)) seconds")
     }
     
-    @Test("Error Types Test")
-    func errorTypesTest() async throws {
-        // Test that error types work correctly
+    @Test("Error Types Validation")
+    func errorTypes() async throws {
+        // Test that error types work correctly (no MainActor needed for error types)
         
         let error1 = RecipeError.modelNotLoaded
         let error2 = RecipeError.noResponse
