@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "23A13B44-1122-459B-A4C1-305AB77A37BF",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Cooking App.xcodeproj",
+      "identifier" : "ACE6D2172EB2526E005C56CD",
+      "name" : "Cooking App"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Cooking App.xcodeproj",
+        "identifier" : "ACE6D2492EB29964005C56CD",
+        "name" : "Cooking AppUITests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Cooking App.xcodeproj",
+        "identifier" : "ACE6D2582EB299FA005C56CD",
+        "name" : "Cooking App Tests"
+      }
+    }
+  ],
+  "version" : 1
+}
