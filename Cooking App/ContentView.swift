@@ -12,11 +12,15 @@ struct ContentView: View {
     @State private var isGenerating = false
     @State private var currentRecipe: Recipe?
     @State private var showingHistory = false
+    @State private var showingParameters = false
+    @State private var errorMessage: String?
+    @State private var parameters = GenerationParameters()
+    @State private var ingredientInput = ""
+    @State private var dietaryInput = ""
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 40) {
-                // Header Section
                 VStack(spacing: 16) {
                     Image(systemName: "fork.knife.circle.fill")
                         .font(.system(size: 60))
@@ -37,7 +41,7 @@ struct ContentView: View {
                 
                 // Main Generation Button
                 Button {
-                    generateRecipe()
+                    generateRecipe(with: parameters)
                 } label: {
                     HStack(spacing: 12) {
                         if isGenerating {
@@ -102,6 +106,18 @@ struct ContentView: View {
             .navigationTitle("Recipe AI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        ingredientInput = parameters.ingredients.joinedWithCommas
+                        dietaryInput = parameters.dietaryRestrictions.joinedWithCommas
+                        showingParameters = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel("Adjust generation settings")
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingHistory = true
@@ -116,15 +132,93 @@ struct ContentView: View {
                 RecipeHistoryView()
                     .environmentObject(recipeGenerator)
             }
+            .sheet(isPresented: $showingParameters) {
+                NavigationStack {
+                    Form {
+                        Section("Category") {
+                            Picker("Category", selection: Binding(get: { parameters.category }, set: { parameters.category = $0 })) {
+                                Text("Any").tag(Optional<RecipeCategory>.none)
+                                ForEach(RecipeCategory.allCases, id: \.self) { category in
+                                    Text(category.rawValue).tag(Optional(category))
+                                }
+                            }
+                        }
+                        
+                        Section("Difficulty") {
+                            Picker("Difficulty", selection: Binding(get: { parameters.difficulty }, set: { parameters.difficulty = $0 })) {
+                                Text("Any").tag(Optional<RecipeDifficulty>.none)
+                                ForEach(RecipeDifficulty.allCases, id: \.self) { difficulty in
+                                    Text(difficulty.rawValue).tag(Optional(difficulty))
+                                }
+                            }
+                        }
+                        
+                        Section("Cooking Time (minutes)") {
+                            Stepper(value: $parameters.cookingTime, in: 0...240, step: 5) {
+                                Text(parameters.cookingTime == 0 ? "No preference" : "\(parameters.cookingTime) minutes")
+                            }
+                        }
+                        
+                        Section("Servings") {
+                            Stepper(value: $parameters.servings, in: 1...12) {
+                                Text("\(parameters.servings) serving(s)")
+                            }
+                        }
+                        
+                        Section("Ingredients") {
+                            TextField("Comma separated", text: $ingredientInput.onChange { newValue in
+                                parameters.ingredients = newValue
+                                    .split(separator: ",")
+                                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                    .filter { !$0.isEmpty }
+                            })
+                        }
+                        
+                        Section("Dietary Restrictions") {
+                            TextField("Comma separated", text: $dietaryInput.onChange { newValue in
+                                parameters.dietaryRestrictions = newValue
+                                    .split(separator: ",")
+                                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                    .filter { !$0.isEmpty }
+                            })
+                        }
+                    }
+                    .navigationTitle("Generation Settings")
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Reset") {
+                                parameters = GenerationParameters()
+                                ingredientInput = ""
+                                dietaryInput = ""
+                            }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                showingParameters = false
+                            }
+                        }
+                    }
+                }
+            }
+            .alert("Unable to generate recipe", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented { errorMessage = nil }
+                }
+            )) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage ?? "Something went wrong.")
+            }
         }
     }
     
-    private func generateRecipe() {
+    private func generateRecipe(with parameters: GenerationParameters) {
         isGenerating = true
         
         Task {
             do {
-                let newRecipe = try await recipeGenerator.generateRecipe()
+                let newRecipe = try await recipeGenerator.generateRecipe(with: parameters)
                 
                 await MainActor.run {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -135,8 +229,7 @@ struct ContentView: View {
             } catch {
                 await MainActor.run {
                     isGenerating = false
-                    // TODO: Show error alert
-                    print("Error generating recipe: \(error)")
+                    errorMessage = error.localizedDescription
                 }
             }
         }

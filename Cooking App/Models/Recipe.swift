@@ -41,7 +41,7 @@ struct Recipe: Identifiable, Codable {
     }
 }
 
-enum RecipeCategory: String, CaseIterable, Codable {
+enum RecipeCategory: String, CaseIterable, Codable, Hashable {
     case appetizer = "Appetizer"
     case main = "Main Course"
     case dessert = "Dessert"
@@ -61,7 +61,7 @@ enum RecipeCategory: String, CaseIterable, Codable {
     }
 }
 
-enum RecipeDifficulty: String, CaseIterable, Codable {
+enum RecipeDifficulty: String, CaseIterable, Codable, Hashable {
     case easy = "Easy"
     case medium = "Medium"
     case hard = "Hard"
@@ -79,6 +79,34 @@ enum RecipeDifficulty: String, CaseIterable, Codable {
         case .easy: return "1.circle"
         case .medium: return "2.circle"
         case .hard: return "3.circle"
+        }
+    }
+}
+
+// MARK: - Flexible Parsing
+extension RecipeCategory {
+    init?(flexible value: String?) {
+        guard let value else { return nil }
+        switch value.lowercased() {
+        case "appetizer", "starter": self = .appetizer
+        case "main", "main course", "entree": self = .main
+        case "dessert", "sweet": self = .dessert
+        case "snack": self = .snack
+        case "beverage", "drink": self = .beverage
+        case "breakfast", "brunch": self = .breakfast
+        default: return nil
+        }
+    }
+}
+
+extension RecipeDifficulty {
+    init?(flexible value: String?) {
+        guard let value else { return nil }
+        switch value.lowercased() {
+        case "easy", "beginner", "simple": self = .easy
+        case "medium", "moderate", "normal": self = .medium
+        case "hard", "difficult", "advanced": self = .hard
+        default: return nil
         }
     }
 }

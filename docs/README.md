@@ -1,197 +1,170 @@
-# Recipe Generator iOS App - Enhanced Structure
+# Recipe Generator — iOS On-Device LLM App
 
-## 📱 App Status: ✅ Fully Functional
+## App Status: Architecturally Complete
 
-This Recipe Generator app is ready for MediaPipe LLM integration.
-
-### 🎯 Quick Start
-1. **Run the app** - Clean, modern UI with cooking-themed design
-2. **Tap "Generate Recipe"** - 2-second simulation with smooth animations
-3. **View Results** - Rich recipe display with ingredients and instructions
-4. **Check History** - Tap clock icon to see all generated recipes
-5. **Ready for Integration** - Replace simulation with your MediaPipe LLM
-
-### 📋 All Issues Resolved
-All simulator warnings and runtime errors have been identified and resolved. See [CHANGELOG.md](CHANGELOG.md) for detailed fix history.
+The app is fully functional with a simulated generation path. All Swift/SwiftUI/MediaPipe wiring is done. The only remaining step is adding the converted `cooking_assistant.task` model file to the Xcode bundle.
 
 ---
 
-## Overview
+## Quick Start
 
-### Fixed: SF Symbol Error
-- **Issue**: `No symbol named 'chef.hat.fill' found in system symbol set`
-- **Cause**: The SF Symbol `chef.hat.fill` doesn't exist in Apple's SF Symbols library
-- **Solution**: Replaced with `fork.knife.circle.fill` which is a valid cooking-related symbol
-
-### Fixed: Core Analytics Warning
-- **Issue**: `Failed to send CA Event for app launch measurements for ca_event_type: 1`
-- **Cause**: Simulator-specific Core Analytics warning (harmless but noisy in debug logs)
-- **Solution**: This is normal simulator behavior and doesn't affect app functionality
-
-### Fixed: Asset Catalog Color Error
-- **Issue**: `No color named 'green' found in asset catalog for main bundle`
-- **Cause**: `RecipeDifficulty.color` was returning string values that SwiftUI interpreted as custom asset colors
-- **Solution**: Changed the property to return `Color` values directly (`.green`, `.orange`, `.red`) instead of strings
-- **Files Modified**: `Recipe.swift` and `RecipeDisplayView.swift`
-
-### Verified SF Symbols Used
-All SF symbols in the app have been verified to exist:
-- ✅ `fork.knife.circle.fill` (main header icon)
-- ✅ `wand.and.stars` (generation button)
-- ✅ `fork.knife.circle` (placeholder state)
-- ✅ `clock` (history button)
-- ✅ `list.bullet` (ingredients section)
-- ✅ `list.number` (instructions section)
-- ✅ All category and difficulty symbols in Recipe.swift
+1. Open `Cooking App.xcworkspace` (not `.xcodeproj`)
+2. Run on iPhone 16 Pro simulator or a real device (iOS 16.0+)
+3. Tap **Generate Recipe** — runs a 2-second simulation until the model file is bundled
+4. View results, browse history, swipe to delete
 
 ---
 
-## Overview
+## Model Pipeline — Why So Many Conversion Steps?
 
-This project has been enhanced from a basic "Hello World" SwiftUI app to a comprehensive Recipe Generator app structure that's ready for MediaPipe LLM integration. The architecture follows your Implementation Plan while providing a solid foundation for future extensions.
+The fine-tuned model is published on Kaggle as `cooking_assistant_lora_4_epoch10.lora.h5`. Getting from that file to a model running on an iPhone requires four distinct format conversions. Each one crosses a hard runtime boundary — none can be skipped.
 
-## Current Project Structure
+### The Source: Kaggle LoRA Checkpoint
+
+The Kaggle model card describes it as:
+
+> *"This fine-tuned model is an instruction-oriented cooking assistant… Leveraging LoRA significantly reduced the computational overhead while still enabling effective domain adaptation."*
+
+LoRA (Low-Rank Adaptation) is a training technique. Instead of fine-tuning all 2 billion parameters of Gemma 2B, it trains two small low-rank adapter matrices per layer — producing a ~50 MB delta file instead of a ~5 GB full checkpoint. This is ideal for publishing and versioning training work cheaply.
+
+The `.lora.h5` is a **training artifact**, not a deployment artifact. The Kaggle author's job was to prove the fine-tuning worked. Getting it onto a phone is the app developer's job — which is exactly this pipeline.
+
+---
+
+### The Four Formats
+
+```
+cooking_assistant_lora_4_epoch10.lora.h5
+        │
+        │  Cannot run: partial delta only, base model not included.
+        │  Must load base Gemma 2B from Kaggle and merge LoRA weights.
+        ▼
+HuggingFace Safetensors  (model.safetensors — 4.9 GB)
+        │
+        │  Universal, framework-neutral checkpoint.
+        │  Still a Python/server format — not an inference graph.
+        │  Must compile to a mobile-optimized binary.
+        ▼
+LiteRT / TFLite  (.tflite)
+        │
+        │  Mobile-optimized flat binary with KV-cache optimization.
+        │  Still a raw model file — no tokenizer, no inference metadata.
+        │  Must bundle everything MediaPipe needs to run it.
+        ▼
+MediaPipe Task Bundle  (cooking_assistant.task)
+        │
+        │  Self-contained deployment artifact:
+        │  LiteRT model + tokenizer + inference metadata.
+        └──► Ready to load on iOS via MediaPipeTasksGenAI SDK.
+```
+
+| Format | What it is | Who uses it |
+|---|---|---|
+| `.lora.h5` | Keras LoRA delta weights (training artifact) | KerasNLP / training pipelines |
+| `.safetensors` | Framework-neutral full checkpoint | HuggingFace ecosystem, any Python ML tooling |
+| `.tflite` / LiteRT | Compiled, quantized mobile inference graph | TFLite runtime, ai-edge-litert |
+| `.task` | MediaPipe deployment bundle (model + tokenizer + metadata) | MediaPipe Tasks GenAI SDK on iOS/Android |
+
+---
+
+### Current Conversion State
+
+| Artifact | Location | Status |
+|---|---|---|
+| LoRA weights | `thriva/cooking_assistant_lora_4_epoch10.lora.h5` | ✅ Present |
+| HuggingFace export (288/288 weights) | `thriva/final_export/hf_export/model.safetensors` | ✅ 4.9 GB, intact |
+| Colab upload package | `thriva/final_export/hf_model_for_colab.zip` | ✅ 3.8 GB, ready to upload |
+| `cooking_assistant.task` | `thriva/mediapipe_output/cooking_assistant.task` | ❌ Sparse file — 0 bytes allocated, conversion incomplete |
+
+Local conversion was blocked by missing native libraries (`libpywrap_litert_common.dylib`) and protobuf version conflicts on macOS. The solution is Google Colab, which has all dependencies pre-installed. See `mediapipe_output/COLAB_CONVERSION_GUIDE.md` for the step-by-step workflow (~15 minutes).
+
+---
+
+### Completing the Pipeline (Colab)
+
+1. Upload `final_export/hf_model_for_colab.zip` (3.8 GB) to Google Colab
+2. Run the conversion notebook — HuggingFace → LiteRT → `.task`
+3. Download `cooking_assistant.task` (~1–2 GB)
+4. Add the file to the Xcode target (drag into project navigator, check "Add to target")
+5. Build and run — `RecipeGenerator.setupModel()` will load it automatically
+
+No Swift changes are needed. The MediaPipe integration is already wired and was updated to match the 0.10.24 SDK API.
+
+---
+
+## Project Structure
 
 ```
 Cooking App/
-├── Cooking_AppApp.swift              # Main app entry point
-├── ContentView.swift                 # Enhanced main UI with generation button
 ├── Models/
-│   ├── Recipe.swift                  # Core recipe data model with categories & difficulty
-│   ├── RecipeGenerator.swift         # LLM interface (ready for MediaPipe integration)
-│   └── GenerationParameters.swift   # Configuration for recipe generation
+│   ├── Recipe.swift                  # Core data model (UUID, category, difficulty, dietary)
+│   ├── RecipeGenerator.swift         # LLM ViewModel (@MainActor, MediaPipe 0.10.24 wired)
+│   ├── GenerationParameters.swift    # User-configurable generation config
+│   └── RecipeParser.swift            # JSON → Recipe struct parser with error recovery
 ├── Views/
-│   ├── RecipeDisplayView.swift       # Beautiful recipe display component
-│   └── RecipeHistoryView.swift       # Recipe history management
-└── Utils/
-    ├── Extensions.swift              # Helpful SwiftUI & utility extensions
-    └── Constants.swift               # App configuration & constants
+│   ├── ContentView.swift             # Root view: generate button, parameters, history nav
+│   ├── RecipeDisplayView.swift       # Recipe presentation (title, metadata, ingredients, steps)
+│   └── RecipeHistoryView.swift       # Paginated list with swipe-delete and clear-all
+├── Utils/
+│   ├── Constants.swift               # AppConfig, UserDefaults keys, SF Symbols, haptics
+│   └── Extensions.swift              # Color palette, view modifiers, String/Array helpers
+└── Cooking_AppApp.swift              # App entry point
+
+Cooking App Tests/
+├── Cooking_App_Tests.swift           # 9 suites: architecture, parameters, error, concurrency
+├── RecipeParserTests.swift           # JSON parsing validation
+└── MediaPipeIntegrationTests.swift   # Phase 2–3 integration tests (.disabled until model bundled)
 ```
 
-## Key Features Implemented
+---
 
-### ✅ Core UI Components
-- **Enhanced ContentView**: Minimalist design with prominent "Generate Recipe" button
-- **RecipeDisplayView**: Rich recipe display with ingredients, instructions, metadata
-- **RecipeHistoryView**: Recipe history management with delete/clear functionality
-- **Responsive Design**: Animations, loading states, and modern iOS design patterns
+## Architecture
 
-### ✅ Data Models
-- **Recipe**: Comprehensive model with categories, difficulty, timing, ingredients, instructions
-- **GenerationParameters**: Flexible parameters for customizing recipe generation
-- **Sample Data**: Pre-built sample recipes for UI testing
+**Pattern:** MVVM — `RecipeGenerator` is the ViewModel (`ObservableObject`), Views observe via `@StateObject`/`@ObservedObject`, Models are plain `struct` value types.
 
-### ✅ Architecture Ready for LLM
-- **RecipeGenerator**: Prepared class structure matching your Implementation Plan
-- **Async/Await**: Modern Swift concurrency for smooth UI
-- **Error Handling**: Proper error types and user-friendly messages
-- **Model Loading**: Structure ready for MediaPipe model integration
+**Concurrency:** All inference runs in a `Task.detached` block. `@MainActor` isolation ensures `@Published` state updates never touch background threads.
 
-### ✅ UI/UX Enhancements
-- **Modern Design**: Orange/red gradient buttons, proper spacing, shadows
-- **Animations**: Smooth transitions and loading states
-- **Accessibility**: Proper labels and system integration
-- **Dark Mode**: Automatic support for system appearance
+**Fallback:** When `cooking_assistant.task` is absent, `generateRecipe()` automatically falls through to `simulateGeneration()`. The UI is identical — no conditional compilation in views.
 
-## MediaPipe Integration Points
+---
 
-The app is structured to easily integrate your MediaPipe LLM model:
+## MediaPipe Integration (Already Wired)
 
-### 1. Model Setup (RecipeGenerator.swift)
 ```swift
-// TODO: Replace setupModel() with actual MediaPipe initialization
-private func setupModel() {
-    guard let modelPath = Bundle.main.path(
-        forResource: "cooking_assistant",
-        ofType: "task"
-    ) else { return }
-    
-    // MediaPipe configuration will go here
-}
+// RecipeGenerator.swift — setupModel() — MediaPipe 0.10.24
+#if canImport(MediaPipeTasksGenAI)
+let options = LlmInference.Options(modelPath: modelPath)
+options.maxTokens = AppConfig.maxTokens       // 512
+options.temperature = AppConfig.defaultTemperature  // 0.8
+options.topK = AppConfig.defaultTopK          // 40
+let inference = try LlmInference(options: options)
+#endif
+
+// generateUsingLLM() — async/await, no callback wrapper
+let response = try await llmInference.generateResponse(inputText: prompt)
 ```
 
-### 2. Recipe Generation (RecipeGenerator.swift)
-```swift
-// TODO: Replace generateSimulatedRecipe() with actual LLM call
-func generateRecipe(with parameters: GenerationParameters) async throws -> Recipe {
-    // MediaPipe LLM inference will go here
-}
+Model path resolves via `Bundle.main.path(forResource: AppConfig.modelFileName, ofType: AppConfig.modelFileExtension)` — `"cooking_assistant"` + `"task"`.
+
+---
+
+## Running Tests
+
+```bash
+xcodebuild test \
+  -workspace "Cooking App.xcworkspace" \
+  -scheme "Cooking App" \
+  -destination "platform=iOS Simulator,name=iPhone 16 Pro"
 ```
 
-### 3. Prompt Building
-- Already implemented `buildPrompt(from:)` method
-- Supports categories, difficulty, ingredients, dietary restrictions
-- Ready to send formatted prompts to your LLM
+---
 
-## Next Steps for LLM Integration
+## Known Issues Resolved
 
-1. **Add MediaPipe Dependencies**
-   ```ruby
-   # Add to Podfile
-   pod 'MediaPipeTasksGenAI'
-   pod 'MediaPipeTasksGenAIC'
-   ```
-
-2. **Add Your Model File**
-   - Convert your `cooking_assistant_lora_4_epoch10_lora.h5` to `.task` format
-   - Add `cooking_assistant.task` to app bundle
-
-3. **Implement LLM Calls**
-   - Replace simulation code in `RecipeGenerator.swift`
-   - Add actual MediaPipe LLM inference calls
-
-4. **Test & Refine**
-   - Test with real model output
-   - Adjust UI based on actual recipe format
-   - Optimize prompt engineering
-
-## Code Quality Features
-
-- **Swift 6 Ready**: Modern Swift syntax and concurrency
-- **MVVM Architecture**: Clean separation of concerns
-- **Error Handling**: Comprehensive error types and recovery
-- **Extensible**: Easy to add new features without breaking existing code
-- **Testable**: Structure supports unit testing
-- **Performance**: Efficient rendering and memory usage
-
-## UI Improvements Made
-
-### Before (Hello World)
-- Basic globe icon and "Hello, world!" text
-- No navigation or structure
-
-### After (Recipe Generator)
-- Professional chef-themed design
-- Prominent generation button with loading states
-- Rich recipe display with structured information
-- History management with swipe actions
-- Proper navigation and toolbar integration
-- Smooth animations and transitions
-
-## Ready for Extensions
-
-The current structure easily supports your planned extensions:
-
-- ✅ Recipe history (implemented)
-- ✅ Category selection (data models ready)
-- ✅ Dietary filters (parameters ready)
-- ✅ Share functionality (structure ready)
-- ✅ Save favorites (models support it)
-- ✅ Custom animations (framework in place)
-
-## Testing the Current Version
-
-Run the app to see:
-1. **Generation Button**: Tap to simulate recipe generation (2-second delay)
-2. **Recipe Display**: See formatted recipe with ingredients and instructions
-3. **History**: Tap clock icon to view previous generations
-4. **Sample Data**: Pre-loaded sample recipes for testing UI
-
-## Development Workflow
-
-1. **Current State**: Fully functional UI with simulated LLM
-2. **Next Phase**: Replace simulation with actual MediaPipe calls
-3. **Enhancement Phase**: Add advanced features from your Implementation Plan
-4. **Polish Phase**: Optimize performance and add analytics
-
-The app maintains the minimalist approach from your Implementation Plan while providing a solid foundation for all planned features. The code is clean, well-documented, and ready for MediaPipe integration!
+| Issue | Fix |
+|---|---|
+| `chef.hat.fill` SF Symbol not found | Replaced with `fork.knife.circle.fill` in `Constants.swift` |
+| Asset catalog `'green'` color error | `RecipeDifficulty.color` returns `Color` values directly, not strings |
+| Core Analytics simulator warning | Harmless simulator noise, no fix needed |
+| `LlmInferenceOptions` / `baseOptions.modelPath` API mismatch | Updated to `LlmInference.Options(modelPath:)` for SDK 0.10.24 |
+| Callback-style `generateResponse` wrapper | Replaced with direct `try await llmInference.generateResponse(inputText:)` |

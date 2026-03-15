@@ -1,0 +1,59 @@
+# ---- Xcode ----
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-to-trash
+*.xcuserstate
+*.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+DerivedData/
+.build/
+
+# ---- CocoaPods ----
+# Pods/ is intentionally excluded — run `pod install` after cloning.
+# Podfile.lock IS committed so everyone gets the same pinned versions.
+Pods/
+*.xcworkspace
+!/*.xcworkspace
+
+# ---- Swift Package Manager ----
+.swiftpm/
+Packages/
+Package.resolved
+
+# ---- macOS ----
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ---- ML model files ----
+# Large binary model files — never commit these.
+*.task
+*.tflite
+*.bin
+*.h5
+*.lora.h5
+*.safetensors
+*.gguf
+*.ggml
+
+# ---- Environment / secrets ----
+.env
+*.pem
+*.p12
+*.mobileprovision
+kaggle.json

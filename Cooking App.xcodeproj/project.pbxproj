@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		ACE6D28F2EB3056D005C56CD /* Testing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACE6D2832EB2AF91005C56CD /* Testing.framework */; platformFilter = ios; };
 		ACE6D2902EB3056D005C56CD /* Testing.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ACE6D2832EB2AF91005C56CD /* Testing.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F0D9A1B22F00000100000002 /* Cooking App/cooking_assistant.task in Resources */ = {isa = PBXBuildFile; fileRef = F0D9A1B12F00000100000001 /* Cooking App/cooking_assistant.task */; };
+		FCE7C97D201AE26902805224 /* Pods_Cooking_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B08374A5F080D99118950986 /* Pods_Cooking_App.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,11 +45,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		946897E8EDBEA27A08129918 /* Pods-Cooking App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cooking App.debug.xcconfig"; path = "Target Support Files/Pods-Cooking App/Pods-Cooking App.debug.xcconfig"; sourceTree = "<group>"; };
 		AC1F041F2ED604ED00776F87 /* Cooking App.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Cooking App.xctestplan"; sourceTree = "<group>"; };
 		ACE6D2182EB2526E005C56CD /* Cooking App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cooking App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ACE6D24A2EB29964005C56CD /* Cooking AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cooking AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ACE6D2592EB299FA005C56CD /* Cooking App Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cooking App Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ACE6D2832EB2AF91005C56CD /* Testing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Testing.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/Testing.framework; sourceTree = DEVELOPER_DIR; };
+		B08374A5F080D99118950986 /* Pods_Cooking_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cooking_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1C0D31CB86F1DDBB6E4255A /* Pods-Cooking App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cooking App.release.xcconfig"; path = "Target Support Files/Pods-Cooking App/Pods-Cooking App.release.xcconfig"; sourceTree = "<group>"; };
+		F0D9A1B12F00000100000001 /* Cooking App/cooking_assistant.task */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cooking App/cooking_assistant.task"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCE7C97D201AE26902805224 /* Pods_Cooking_App.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -99,6 +106,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4AA2CC6450E2F0D7412EFF80 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				946897E8EDBEA27A08129918 /* Pods-Cooking App.debug.xcconfig */,
+				B1C0D31CB86F1DDBB6E4255A /* Pods-Cooking App.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		AC4319F42ED616A800E97BD1 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				F0D9A1B12F00000100000001 /* Cooking App/cooking_assistant.task */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		ACE6D20F2EB2526E005C56CD = {
 			isa = PBXGroup;
 			children = (
@@ -109,6 +133,8 @@
 				ACE6D25A2EB299FA005C56CD /* Cooking App Tests */,
 				ACE6D2822EB2AF91005C56CD /* Frameworks */,
 				ACE6D2192EB2526E005C56CD /* Products */,
+				4AA2CC6450E2F0D7412EFF80 /* Pods */,
+				AC4319F42ED616A800E97BD1 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -126,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				ACE6D2832EB2AF91005C56CD /* Testing.framework */,
+				B08374A5F080D99118950986 /* Pods_Cooking_App.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -137,6 +164,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = ACE6D2232EB25270005C56CD /* Build configuration list for PBXNativeTarget "Cooking App" */;
 			buildPhases = (
+				0F1B2E43A823C9C4FDB35A3A /* [CP] Check Pods Manifest.lock */,
 				ACE6D2142EB2526E005C56CD /* Sources */,
 				ACE6D2152EB2526E005C56CD /* Frameworks */,
 				ACE6D2162EB2526E005C56CD /* Resources */,
@@ -150,8 +178,6 @@
 				ACE6D2282EB2765D005C56CD /* docs */,
 			);
 			name = "Cooking App";
-			packageProductDependencies = (
-			);
 			productName = "Cooking App";
 			productReference = ACE6D2182EB2526E005C56CD /* Cooking App.app */;
 			productType = "com.apple.product-type.application";
@@ -173,8 +199,6 @@
 				ACE6D24B2EB29965005C56CD /* Cooking AppUITests */,
 			);
 			name = "Cooking AppUITests";
-			packageProductDependencies = (
-			);
 			productName = "Cooking AppUITests";
 			productReference = ACE6D24A2EB29964005C56CD /* Cooking AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -197,8 +221,6 @@
 				ACE6D25A2EB299FA005C56CD /* Cooking App Tests */,
 			);
 			name = "Cooking App Tests";
-			packageProductDependencies = (
-			);
 			productName = "Cooking App Tests";
 			productReference = ACE6D2592EB299FA005C56CD /* Cooking App Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -252,6 +274,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0D9A1B22F00000100000002 /* Cooking App/cooking_assistant.task in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,6 +293,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0F1B2E43A823C9C4FDB35A3A /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Cooking App-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		ACE6D2142EB2526E005C56CD /* Sources */ = {
@@ -430,6 +478,7 @@
 		};
 		ACE6D2242EB25270005C56CD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 946897E8EDBEA27A08129918 /* Pods-Cooking App.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -464,6 +513,7 @@
 		};
 		ACE6D2252EB25270005C56CD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1C0D31CB86F1DDBB6E4255A /* Pods-Cooking App.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

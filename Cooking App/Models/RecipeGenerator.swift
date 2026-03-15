@@ -8,6 +8,9 @@
 import Foundation
 import SwiftUI
 internal import Combine
+#if canImport(MediaPipeTasksGenAI)
+import MediaPipeTasksGenAI
+#endif
 
 // This will be the main LLM interface - prepared for MediaPipe integration
 class RecipeGenerator: ObservableObject {
@@ -19,8 +22,19 @@ class RecipeGenerator: ObservableObject {
     private var modelLoaded = false
     private var isSettingUpModel = false
     
+    #if canImport(MediaPipeTasksGenAI)
+    private var llmInference: LlmInference?
+    #endif
+    
+    private var canUseLLM: Bool {
+        #if canImport(MediaPipeTasksGenAI)
+        return modelLoaded && llmInference != nil
+        #else
+        return false
+        #endif
+    }
+    
     init() {
-        // TODO: Initialize MediaPipe LLM when ready
         setupModel()
         // Safely load sample recipes on main actor
         Task { @MainActor [weak self] in
@@ -33,36 +47,56 @@ class RecipeGenerator: ObservableObject {
         guard !isSettingUpModel else { return }
         isSettingUpModel = true
         
-        // Placeholder for MediaPipe model setup
-        // This matches the structure from your Implementation Plan
-        
-        /*
-        guard let modelPath = Bundle.main.path(
-            forResource: "cooking_assistant",
-            ofType: "task"
-        ) else {
-            lastError = "Model file not found"
-            isSettingUpModel = false
-            return
-        }
-        
-        // MediaPipe LLM options configuration will go here
-        */
-        
-        // For now, simulate model loading
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-            await MainActor.run {
-                self?.modelLoaded = true
-                self?.isSettingUpModel = false
+        #if canImport(MediaPipeTasksGenAI)
+        Task.detached { [weak self] in
+            guard let self else { return }
+            
+            guard let modelPath = Bundle.main.path(
+                forResource: AppConfig.modelFileName,
+                ofType: AppConfig.modelFileExtension
+            ) else {
+                await MainActor.run {
+                    self.lastError = ErrorMessages.modelNotFound
+                    self.isSettingUpModel = false
+                }
+                return
             }
-            print("Model setup complete (simulated)")
+            
+            do {
+                let options = LlmInference.Options(modelPath: modelPath)
+                options.maxTokens = AppConfig.maxTokens
+                options.temperature = AppConfig.defaultTemperature
+                options.topK = AppConfig.defaultTopK
+
+                let inference = try LlmInference(options: options)
+                
+                await MainActor.run {
+                    self.llmInference = inference
+                    self.modelLoaded = true
+                    self.isSettingUpModel = false
+                }
+                print("MediaPipe model setup complete")
+            } catch {
+                await MainActor.run {
+                    self.lastError = ErrorMessages.modelLoadFailed + " (\(error.localizedDescription))"
+                    self.isSettingUpModel = false
+                }
+            }
         }
+        #else
+        // MediaPipe frameworks not available in this build; keep simulation path
+        modelLoaded = false
+        isSettingUpModel = false
+        #endif
     }
     
     // Main recipe generation function - ready for LLM integration
     @MainActor
     func generateRecipe(with parameters: GenerationParameters = GenerationParameters()) async throws -> Recipe {
+        guard parameters.isValid else {
+            lastError = RecipeError.invalidInput.localizedDescription
+            throw RecipeError.invalidInput
+        }
         // Prevent multiple concurrent generations
         guard !isLoading else {
             throw RecipeError.generationInProgress
@@ -71,67 +105,90 @@ class RecipeGenerator: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // TODO: Replace with actual MediaPipe LLM call
-        // This structure matches your Implementation Plan
-        
-        /*
-        guard let llmInference = llmInference else {
-            throw RecipeError.modelNotLoaded
-        }
-        
-        let prompt = buildPrompt(from: parameters)
-        let generatedText = try await withCheckedThrowingContinuation { continuation in
-            llmInference.generateResponse(inputText: prompt) { result, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                
-                if let result = result {
-                    continuation.resume(returning: result)
-                } else {
-                    continuation.resume(throwing: RecipeError.noResponse)
-                }
+        do {
+            if let recipe = try await generateUsingLLM(parameters: parameters) {
+                lastError = nil
+                generatedRecipes.insert(recipe, at: 0)
+                return recipe
             }
+        } catch {
+            lastError = error.localizedDescription
+            throw error
         }
-        */
         
-        // Simulate LLM generation for now
+        // Simulate LLM generation when real model is unavailable
         try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
         
         let simulatedRecipe = generateSimulatedRecipe(parameters: parameters)
         generatedRecipes.insert(simulatedRecipe, at: 0)
+        lastError = nil
         
         return simulatedRecipe
     }
     
-    // Build prompt from parameters (ready for LLM)
-    private func buildPrompt(from parameters: GenerationParameters) -> String {
-        var prompt = "Generate a detailed recipe"
+    // Build prompt from parameters (JSON-focused)
+    private func buildJSONPrompt(from parameters: GenerationParameters) -> String {
+        var requirements: [String] = []
         
         if let category = parameters.category {
-            prompt += " for a \(category.rawValue.lowercased())"
+            requirements.append("Category: \(category.rawValue)")
         }
-        
         if let difficulty = parameters.difficulty {
-            prompt += " that is \(difficulty.rawValue.lowercased()) to make"
+            requirements.append("Difficulty: \(difficulty.rawValue)")
         }
-        
         if parameters.cookingTime > 0 {
-            prompt += " and takes approximately \(parameters.cookingTime) minutes to prepare"
+            requirements.append("Cooking time about \(parameters.cookingTime) minutes")
         }
-        
+        requirements.append("Servings: \(parameters.servings)")
         if !parameters.ingredients.isEmpty {
-            prompt += " using these ingredients: \(parameters.ingredients.joined(separator: ", "))"
+            requirements.append("Use ingredients: \(parameters.ingredients.joined(separator: ", "))")
         }
-        
         if !parameters.dietaryRestrictions.isEmpty {
-            prompt += " that is \(parameters.dietaryRestrictions.joined(separator: " and "))"
+            requirements.append("Dietary preferences: \(parameters.dietaryRestrictions.joined(separator: ", "))")
+        }
+        if !parameters.cuisine.isEmpty {
+            requirements.append("Cuisine: \(parameters.cuisine)")
         }
         
-        prompt += ". Include a clear title, ingredient list with quantities, step-by-step instructions, cooking time, and number of servings."
+        let schema = """
+        {
+          "title": "String",
+          "ingredients": ["String", "String"],
+          "instructions": ["String", "String"],
+          "cookingTime": 30,
+          "servings": 4,
+          "category": "Main Course",
+          "difficulty": "Medium",
+          "notes": "Optional tips"
+        }
+        """
         
-        return prompt
+        return """
+        You are an expert chef. Return ONLY valid JSON following this schema, with no explanations or markdown:
+        \(schema)
+        Rules:
+        - Include at least 4 ingredients and 3 instructions.
+        - Use integers for cookingTime (minutes) and servings.
+        - category should be a human label (e.g., Main Course, Dessert, Snack, Beverage).
+        - difficulty should be Easy, Medium, or Hard.
+        Context: \(requirements.joined(separator: "; "))
+        Output must be strict JSON that can be decoded without changes.
+        """
+    }
+    
+    private func generateUsingLLM(parameters: GenerationParameters) async throws -> Recipe? {
+        #if canImport(MediaPipeTasksGenAI)
+        guard canUseLLM, let llmInference else {
+            return nil
+        }
+        
+        let prompt = buildJSONPrompt(from: parameters)
+        let response = try await llmInference.generateResponse(inputText: prompt)
+        
+        return try RecipeParser.parseRecipeJSON(response, parameters: parameters)
+        #else
+        return nil
+        #endif
     }
     
     // Generate sample recipes for testing UI
@@ -194,6 +251,7 @@ enum RecipeError: Error, LocalizedError {
     case generationFailed
     case invalidInput
     case generationInProgress
+    case parsingFailed
     
     var errorDescription: String? {
         switch self {
@@ -207,6 +265,8 @@ enum RecipeError: Error, LocalizedError {
             return "Invalid input parameters"
         case .generationInProgress:
             return "Recipe generation already in progress"
+        case .parsingFailed:
+            return "Generated recipe could not be parsed"
         }
     }
 }
