@@ -2,8 +2,8 @@ platform :ios, '16.0'
 use_frameworks!
 
 target 'Cooking App' do
-  pod 'MediaPipeTasksGenAI'
-  pod 'MediaPipeTasksGenAIC'
+  pod 'MediaPipeTasksGenAI', '0.10.24'
+  pod 'MediaPipeTasksGenAIC', '0.10.24'
 end
 
 post_install do |installer|

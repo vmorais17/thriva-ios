@@ -15,7 +15,7 @@ struct AppConfig {
     static let minimumIOSVersion = "16.0"
     
     // MediaPipe Model Configuration
-    static let modelFileName = "cooking_assistant"
+    static let modelFileName = "cooking_assistant_v3"
     static let modelFileExtension = "task"
     static let maxTokens = 512
     static let defaultTemperature: Float = 0.8
@@ -118,11 +118,11 @@ struct RecipePrompts {
 
 // MARK: - Error Messages
 struct ErrorMessages {
-    static let modelNotFound = "Recipe model could not be found. Please reinstall the app."
-    static let modelLoadFailed = "Failed to load the recipe model. Please try again."
-    static let generationFailed = "Could not generate a recipe. Please try again."
-    static let noInternet = "This app works offline, no internet connection needed!"
-    static let genericError = "Something went wrong. Please try again."
+    nonisolated(unsafe) static let modelNotFound = "Recipe model could not be found. Please reinstall the app."
+    nonisolated(unsafe) static let modelLoadFailed = "Failed to load the recipe model. Please try again."
+    nonisolated(unsafe) static let generationFailed = "Could not generate a recipe. Please try again."
+    nonisolated(unsafe) static let noInternet = "This app works offline, no internet connection needed!"
+    nonisolated(unsafe) static let genericError = "Something went wrong. Please try again."
 }
 
 // MARK: - Success Messages

@@ -16,9 +16,9 @@ struct ModelConversionTests {
     @Test("Source Model File Validation")
     func sourceModelFileValidation() async throws {
         // Test 1: Validate that the source .h5 model exists and is accessible
-        let expectedTaskPath = Bundle.main.path(forResource: "cooking_assistant", ofType: "task")
+        let expectedTaskPath = Bundle.main.path(forResource: "cooking_assistant_v3", ofType: "task")
         print("Expected model path: \(expectedTaskPath ?? "nil")")
-        print("⚠️  Model conversion required: cooking_assistant.task not found in bundle")
+        print("⚠️  Model conversion required: cooking_assistant_v3.task not found in bundle")
         print("📝 Next step: Convert cooking_assistant_lora_4_epoch10_lora.h5 to .task format")
     }
     

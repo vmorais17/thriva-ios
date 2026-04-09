@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 internal import Combine
 #if canImport(MediaPipeTasksGenAI)
-import MediaPipeTasksGenAI
+internal import MediaPipeTasksGenAI
 #endif
 
 // This will be the main LLM interface - prepared for MediaPipe integration
@@ -42,41 +42,76 @@ class RecipeGenerator: ObservableObject {
         }
     }
     
+    // Copy model from read-only app bundle to writable Documents directory.
+    // This allows XNNPACK to write its weight cache next to the model file,
+    // so subsequent launches mmap the pre-packed cache instead of repacking
+    // the full model in RAM (avoids the ~5 GB peak that OOMs on device).
+    private func writableModelPath(fileName: String, fileExt: String) async throws -> String {
+        let fm = FileManager.default
+        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dest = docs.appendingPathComponent("\(fileName).\(fileExt)")
+        guard let src = Bundle.main.url(forResource: fileName, withExtension: fileExt) else {
+            throw RecipeError.modelNotFound
+        }
+        // Re-copy if destination is missing or size differs (model was updated in bundle)
+        let destSize = (try? fm.attributesOfItem(atPath: dest.path)[.size] as? Int) ?? 0
+        let srcSize  = (try? fm.attributesOfItem(atPath: src.path)[.size] as? Int) ?? -1
+        if destSize != srcSize {
+            try? fm.removeItem(at: dest)
+            try fm.copyItem(at: src, to: dest)
+        }
+        return dest.path
+    }
+
     private func setupModel() {
         // Prevent multiple concurrent setup attempts
-        guard !isSettingUpModel else { return }
+        guard !isSettingUpModel else {
+            print("[LLM] setupModel() skipped — already in progress")
+            return
+        }
         isSettingUpModel = true
-        
+        // Capture statics on the calling context before entering the detached task
+        let modelFileName  = AppConfig.modelFileName
+        let modelFileExt   = AppConfig.modelFileExtension
+        let maxTokens      = AppConfig.maxTokens
+        let defaultTopK    = AppConfig.defaultTopK
+        print("[LLM] setupModel() started — looking for '\(modelFileName).\(modelFileExt)'")
+
         #if canImport(MediaPipeTasksGenAI)
         Task.detached { [weak self] in
             guard let self else { return }
-            
-            guard let modelPath = Bundle.main.path(
-                forResource: AppConfig.modelFileName,
-                ofType: AppConfig.modelFileExtension
-            ) else {
+
+            let modelPath: String
+            do {
+                modelPath = try await self.writableModelPath(fileName: modelFileName, fileExt: modelFileExt)
+                print("[LLM] Model path resolved: \(modelPath)")
+            } catch {
+                print("[LLM] Model file not found in bundle: \(error)")
                 await MainActor.run {
                     self.lastError = ErrorMessages.modelNotFound
                     self.isSettingUpModel = false
                 }
                 return
             }
-            
+
             do {
+                print("[LLM] Initialising LlmInference (may take 10–60 s)...")
                 let options = LlmInference.Options(modelPath: modelPath)
-                options.maxTokens = AppConfig.maxTokens
-                options.temperature = AppConfig.defaultTemperature
-                options.topK = AppConfig.defaultTopK
+                // maxTokens must not exceed the model's KV-cache size (ekv1280 → 1280)
+                options.maxTokens = maxTokens
+                options.maxTopk   = defaultTopK
+                print("[LLM] Options: maxTokens=\(options.maxTokens) maxTopk=\(options.maxTopk)")
 
                 let inference = try LlmInference(options: options)
-                
+
                 await MainActor.run {
                     self.llmInference = inference
                     self.modelLoaded = true
                     self.isSettingUpModel = false
                 }
-                print("MediaPipe model setup complete")
+                print("[LLM] Model setup complete ✓")
             } catch {
+                print("[LLM] LlmInference init failed: \(error)")
                 await MainActor.run {
                     self.lastError = ErrorMessages.modelLoadFailed + " (\(error.localizedDescription))"
                     self.isSettingUpModel = false
@@ -84,7 +119,7 @@ class RecipeGenerator: ObservableObject {
             }
         }
         #else
-        // MediaPipe frameworks not available in this build; keep simulation path
+        print("[LLM] MediaPipeTasksGenAI not available — simulation mode")
         modelLoaded = false
         isSettingUpModel = false
         #endif
@@ -111,12 +146,15 @@ class RecipeGenerator: ObservableObject {
                 generatedRecipes.insert(recipe, at: 0)
                 return recipe
             }
+        } catch RecipeError.parsingFailed {
+            // LLM produced non-JSON output — log and fall through to simulation
+            print("LLM response could not be parsed as JSON — falling back to simulated recipe")
         } catch {
             lastError = error.localizedDescription
             throw error
         }
-        
-        // Simulate LLM generation when real model is unavailable
+
+        // Fallback: simulated recipe when LLM is unavailable or output is unparseable
         try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
         
         let simulatedRecipe = generateSimulatedRecipe(parameters: parameters)
@@ -126,54 +164,34 @@ class RecipeGenerator: ObservableObject {
         return simulatedRecipe
     }
     
-    // Build prompt from parameters (JSON-focused)
+    // Build prompt from parameters — plain text, matches the LoRA training format
     private func buildJSONPrompt(from parameters: GenerationParameters) -> String {
-        var requirements: [String] = []
-        
+        var parts: [String] = []
+
+        if let category = parameters.category { parts.append(category.rawValue.lowercased()) }
+        if let difficulty = parameters.difficulty { parts.append(difficulty.rawValue.lowercased()) }
+        if !parameters.cuisine.isEmpty { parts.append(parameters.cuisine) }
+        if !parameters.dietaryRestrictions.isEmpty { parts.append(contentsOf: parameters.dietaryRestrictions) }
+        if !parameters.ingredients.isEmpty { parts.append("using \(parameters.ingredients.joined(separator: ", "))") }
+        if parameters.cookingTime > 0 { parts.append("ready in \(parameters.cookingTime) minutes") }
+
+        // Mirror Cell 5 training test: "Give me a simple pasta recipe"
+        // No period — LoRA training likely didn't use punctuation at end of prompts
+        var dishType = ""
         if let category = parameters.category {
-            requirements.append("Category: \(category.rawValue)")
+            switch category {
+            case .breakfast: dishType = "breakfast"
+            case .main:     dishType = "main"
+            case .beverage:    dishType = "beverage"
+            case .snack:     dishType = "snack"
+            case .dessert:   dishType = "dessert"
+            default:         dishType = "main course"
+            }
         }
-        if let difficulty = parameters.difficulty {
-            requirements.append("Difficulty: \(difficulty.rawValue)")
-        }
-        if parameters.cookingTime > 0 {
-            requirements.append("Cooking time about \(parameters.cookingTime) minutes")
-        }
-        requirements.append("Servings: \(parameters.servings)")
-        if !parameters.ingredients.isEmpty {
-            requirements.append("Use ingredients: \(parameters.ingredients.joined(separator: ", "))")
-        }
-        if !parameters.dietaryRestrictions.isEmpty {
-            requirements.append("Dietary preferences: \(parameters.dietaryRestrictions.joined(separator: ", "))")
-        }
-        if !parameters.cuisine.isEmpty {
-            requirements.append("Cuisine: \(parameters.cuisine)")
-        }
-        
-        let schema = """
-        {
-          "title": "String",
-          "ingredients": ["String", "String"],
-          "instructions": ["String", "String"],
-          "cookingTime": 30,
-          "servings": 4,
-          "category": "Main Course",
-          "difficulty": "Medium",
-          "notes": "Optional tips"
-        }
-        """
-        
-        return """
-        You are an expert chef. Return ONLY valid JSON following this schema, with no explanations or markdown:
-        \(schema)
-        Rules:
-        - Include at least 4 ingredients and 3 instructions.
-        - Use integers for cookingTime (minutes) and servings.
-        - category should be a human label (e.g., Main Course, Dessert, Snack, Beverage).
-        - difficulty should be Easy, Medium, or Hard.
-        Context: \(requirements.joined(separator: "; "))
-        Output must be strict JSON that can be decoded without changes.
-        """
+        let cuisinePart = parameters.cuisine.isEmpty ? "" : " \(parameters.cuisine)"
+        let ingPart     = parameters.ingredients.isEmpty ? "" : " with \(parameters.ingredients.prefix(3).joined(separator: ", "))"
+        let baseDish    = dishType.isEmpty ? "recipe" : "\(dishType) recipe"
+        return "Give me a simple\(cuisinePart) \(baseDish)\(ingPart)"
     }
     
     private func generateUsingLLM(parameters: GenerationParameters) async throws -> Recipe? {
@@ -183,9 +201,12 @@ class RecipeGenerator: ObservableObject {
         }
         
         let prompt = buildJSONPrompt(from: parameters)
+        print("=== LLM PROMPT ===\n\(prompt)\n=== END PROMPT ===")
         let response = try await llmInference.generateResponse(inputText: prompt)
-        
-        return try RecipeParser.parseRecipeJSON(response, parameters: parameters)
+        print("=== LLM RAW RESPONSE (\(response.count) chars) ===")
+        print(response)
+        print("=== END RESPONSE ===")
+        return try RecipeParser.parse(response, parameters: parameters)
         #else
         return nil
         #endif
@@ -247,6 +268,7 @@ class RecipeGenerator: ObservableObject {
 // Error handling for LLM operations
 enum RecipeError: Error, LocalizedError {
     case modelNotLoaded
+    case modelNotFound
     case noResponse
     case generationFailed
     case invalidInput
@@ -257,6 +279,8 @@ enum RecipeError: Error, LocalizedError {
         switch self {
         case .modelNotLoaded:
             return "Recipe model could not be loaded"
+        case .modelNotFound:
+            return ErrorMessages.modelNotFound
         case .noResponse:
             return "No recipe was generated"
         case .generationFailed:
