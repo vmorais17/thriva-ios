@@ -18,28 +18,23 @@ The model generates free-form recipe text. `RecipeParser` converts that into a t
 
 ### Model deployment pipeline
 
-Getting a base instruct model from HuggingFace onto an iPhone requires three format conversions across two incompatible runtime environments. There is also a fast path that skips conversion entirely.
+Getting a Gemma 3 model onto an iPhone means producing a single self-contained `.task` bundle: a MediaPipe artifact that packages the quantized model weights, SentencePiece tokenizer, and prompt metadata in one file that `LlmInference` can load directly.
 
-**Fast path:** `litert-community` publishes pre-converted Gemma 3 1B IT `.task` files directly on HuggingFace. A single `hf_hub_download` call retrieves a ready-to-use `dynamic_int8` bundle — no conversion tooling required.
-
-**Full conversion path:**
+**Fast path (used in this project):**
 
 ```
-google/gemma-3-1b-it (HuggingFace safetensors)
-    │  PyTorch checkpoint — not a mobile inference graph
+litert-community/Gemma3-1B-IT (HuggingFace)
+    │  Pre-converted dynamic_int8 bundle, ekv1280 context, ~1 GB
     ▼
-LiteRT / TFLite (.tflite)
-    │  Compiled, INT8-quantized graph with KV-cache baked in
-    │  Built by litert-torch via PyTorch 2 export + quantization
-    ▼
-MediaPipe Task Bundle (.task)
-    └──► TFLite model + SentencePiece tokenizer + prompt metadata
-         Single file loaded by MediaPipeTasksGenAI on iOS
+cooking_assistant_gemma3.task
+    └──► Ready to add to Xcode target — no conversion tooling required
 ```
 
-**Why two stages?** A HuggingFace safetensors checkpoint is a set of raw weights — it has no inference graph, no KV-cache layout, no quantization. LiteRT compilation produces a flat binary that the mobile runtime can mmap directly and execute without a Python interpreter. The `.task` bundle then adds the tokenizer and prompt template metadata alongside the model so MediaPipe has a single self-contained artifact.
+`litert-community` publishes pre-converted Gemma 3 1B IT `.task` files directly on HuggingFace. A single `hf_hub_download` call in Cell 0 of the conversion notebook retrieves `Gemma3-1B-IT_multi-prefill-seq_q8_ekv1280.task`, renames it to `cooking_assistant_gemma3.task`, and saves it to Drive.
 
-**Why two Colab sessions?** litert-torch and MediaPipe's bundler require incompatible TensorFlow/JAX stacks — they can't share a Python environment. The conversion notebook runs litert-torch in a factory-reset runtime (to clear Colab's pre-installed system libraries that cause ABI conflicts), backs up the `.tflite` output to Drive, then switches to a fresh session for MediaPipe bundling.
+**Alternative — build from source (if fast path fails):**
+
+If the pre-converted bundle is unavailable, the full path (Cells 1–11) builds the `.task` from the raw HuggingFace checkpoint using two incompatible Colab sessions: a factory-reset runtime for `litert-torch` (PyTorch 2 export → quantized `.tflite`), then the main session for MediaPipe bundling (`.tflite` + tokenizer → `.task`). The two-session split exists because `litert-torch` and MediaPipe's bundler require conflicting TensorFlow/JAX stacks that cannot share a Python environment.
 
 ---
 
@@ -86,7 +81,7 @@ Cooking App/
 
 ## Model conversion pipeline
 
-The conversion notebook (`docs/gemma3_conversion.ipynb`) covers both paths. Cell 0 is the fast path — `hf_hub_download` from `litert-community/Gemma3-1B-IT`, validate the ZIP structure, done. Cells 1–11 are the full conversion path for building from source.
+The conversion notebook (`docs/gemma3_conversion.ipynb`) covers both paths. Cell 0 is the fast path — `hf_hub_download` from `litert-community/Gemma3-1B-IT`, validate the ZIP structure, done. Cells 1–11 are the full conversion path for building from source. Either path ends with Cell 11 saving `cooking_assistant_gemma3.task` to Google Drive and downloading it directly — the file is ready to drag into Xcode.
 
 Key decisions made during development:
 
